@@ -38,10 +38,6 @@ import org.elasticsearch.http.HttpRouteStats;
 import org.elasticsearch.http.HttpServerTransport;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.rest.RestHandler.Route;
-import org.elasticsearch.rest.action.ProfilerCount;
-import org.elasticsearch.rest.action.ProfilerOff;
-import org.elasticsearch.rest.action.ProfilerOn;
-import org.elasticsearch.rest.action.ProfilerStatus;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.telemetry.tracing.Tracer;
 import org.elasticsearch.transport.Transports;
@@ -130,10 +126,6 @@ public class RestController implements HttpServerTransport.Dispatcher {
         this.client = client;
         this.circuitBreakerService = circuitBreakerService;
         registerHandlerNoWrap(RestRequest.Method.GET, "/favicon.ico", RestApiVersion.current(), new RestFavIconHandler());
-        registerHandler(new ProfilerOff());
-        registerHandler(new ProfilerOn());
-        registerHandler(new ProfilerCount());
-        registerHandler(new ProfilerStatus());
         this.apiProtections = new ServerlessApiProtections(false);
     }
 
