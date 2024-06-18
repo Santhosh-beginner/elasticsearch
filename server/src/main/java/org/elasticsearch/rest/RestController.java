@@ -38,6 +38,7 @@ import org.elasticsearch.http.HttpRouteStats;
 import org.elasticsearch.http.HttpServerTransport;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.rest.RestHandler.Route;
+//import org.elasticsearch.rest.action.ProfilerActionHandler;
 import org.elasticsearch.rest.action.ProfilerActionHandler;
 import org.elasticsearch.rest.action.ProfilerCount;
 import org.elasticsearch.rest.action.ProfilerOff;

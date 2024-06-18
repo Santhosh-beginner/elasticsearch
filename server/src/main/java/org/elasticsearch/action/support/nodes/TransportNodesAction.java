@@ -53,10 +53,12 @@ public abstract class TransportNodesAction<
     private static final Logger logger = LogManager.getLogger(TransportNodesAction.class);
 
     protected final ClusterService clusterService;
+
     protected final TransportService transportService;
     protected final String transportNodeAction;
 
     private final Executor finalExecutor;
+//    private final ProfilerScheduler profilerScheduler;
 
     /**
      * @param actionName        action name

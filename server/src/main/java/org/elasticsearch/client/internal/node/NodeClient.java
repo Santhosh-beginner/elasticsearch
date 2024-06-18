@@ -63,6 +63,7 @@ public class NodeClient extends AbstractClient {
         this.localNodeId = localNodeId;
         this.localConnection = localConnection;
         this.remoteClusterService = remoteClusterService;
+
     }
 
     /**

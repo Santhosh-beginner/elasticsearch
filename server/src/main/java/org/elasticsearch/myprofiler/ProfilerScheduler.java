@@ -36,12 +36,14 @@ public class ProfilerScheduler {
     public synchronized void start() {
         if (cancellable == null) {
             ProfilerState.getInstance().enableProfiling();
+            System.out.println("scheduler running");
             cancellable = threadPool.scheduleWithFixedDelay(this::run, interval,threadPool.generic());
         }
     }
     public synchronized void stop() {
         if (cancellable != null) {
             ProfilerState.getInstance().disableProfiling();
+            System.out.println("scheduler off");
             cancellable.cancel();
             cancellable = null;
         }
@@ -52,12 +54,14 @@ public class ProfilerScheduler {
         long startTime = System.currentTimeMillis();
         long endTime = startTime+300000;
         if (profilerState.isProfiling()) {
-            Map<String, Long> stats = profilerState.collectAndResetStats();
+            long totalSearchQueries = profilerState.getQueryCount();
+            Map<String, Map<String, Long>> stats = profilerState.collectAndResetStats();
             // Code to push stats to Elasticsearch index
-            pushStatsToIndex(stats,startTime,endTime);
+
+            pushStatsToIndex(stats,totalSearchQueries,startTime,endTime);
         }
     }
-    private void pushStatsToIndex(Map<String, Long> stats,long startTime,long endTime) throws ElasticsearchException{
+    private void pushStatsToIndex(Map<String, Map<String, Long>> stats,long totalSearchQueries,long startTime,long endTime) throws ElasticsearchException{
 
 //        System.out.println("Statistics for the last interval:");
 //        for (Map.Entry<String, Long> entry : stats.entrySet()) {
@@ -65,14 +69,18 @@ public class ProfilerScheduler {
 //        }
         try {
             XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field("nodeName", "node-1")
+                .field("totalSearchQueries", totalSearchQueries)
                 .field("startTime", startTime)
                 .field("endTime", endTime)
                 .startArray("stats");
 
-            for (Map.Entry<String, Long> entry : stats.entrySet()) {
+            for (Map.Entry<String, Map<String, Long>> entry : stats.entrySet()) {
                 builder.startObject()
                     .field("index", entry.getKey())
-                    .field("search_query_count", entry.getValue())
+                    .field("search_query_count", entry.getValue().getOrDefault("search_query_count", 0L))
+                    .field("index_request_count", entry.getValue().getOrDefault("index_request_count", 0L))
+                    .field("get_request_count", entry.getValue().getOrDefault("get_request_count", 0L))
                     .endObject();
             }
             builder.endArray().endObject();

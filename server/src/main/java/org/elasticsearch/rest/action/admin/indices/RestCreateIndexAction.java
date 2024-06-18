@@ -17,6 +17,7 @@ import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.Scope;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Collections.singletonMap;
 import static org.elasticsearch.rest.RestRequest.Method.PUT;
@@ -55,6 +57,10 @@ public class RestCreateIndexAction extends BaseRestHandler {
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
         CreateIndexRequest createIndexRequest;
+        ProfilerState.getInstance().incrementQueryCount();
+        if(ProfilerState.getInstance().getStatus() == 1){
+            ProfilerState.getInstance().getIndex_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
+        }
         if (request.getRestApiVersion() == RestApiVersion.V_7) {
             createIndexRequest = prepareRequestV7(request);
         } else {
