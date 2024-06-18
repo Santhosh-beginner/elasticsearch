@@ -13,6 +13,7 @@ import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.VersionType;
+import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.Scope;
@@ -23,6 +24,7 @@ import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 import static org.elasticsearch.rest.RestRequest.Method.HEAD;
@@ -53,6 +55,10 @@ public class RestGetAction extends BaseRestHandler {
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
         if (request.getRestApiVersion() == RestApiVersion.V_7) {
             request.param("type"); // consume and ignore the type
+        }
+        ProfilerState.getInstance().incrementQueryCount();
+        if(ProfilerState.getInstance().getStatus() == 1){
+            ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
         }
 
         GetRequest getRequest = new GetRequest(request.param("index"), request.param("id"));

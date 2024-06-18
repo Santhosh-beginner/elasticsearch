@@ -702,6 +702,9 @@ public class ActionModule extends AbstractModule {
         actions.register(GetAliasesAction.INSTANCE, TransportGetAliasesAction.class);
         actions.register(GetSettingsAction.INSTANCE, TransportGetSettingsAction.class);
 
+
+        actions.register(TransportStartProfilerAction.ACTION_TYPE,TransportStartProfilerAction.class);
+        actions.register(TransportStopProfilerAction.ACTION_TYPE,TransportStopProfilerAction.class);
         actions.register(TransportIndexAction.TYPE, TransportIndexAction.class);
         actions.register(TransportGetAction.TYPE, TransportGetAction.class);
         actions.register(TermVectorsAction.INSTANCE, TransportTermVectorsAction.class);

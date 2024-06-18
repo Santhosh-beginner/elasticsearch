@@ -9,6 +9,7 @@
 package org.elasticsearch.myprofiler;
 
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -16,12 +17,16 @@ public class ProfilerState {
     private static ProfilerState instance;
     private boolean profiling;
     private AtomicLong queryCount;
-    private ConcurrentHashMap<String,AtomicLong> index_query_count;
+    private ConcurrentHashMap<String,AtomicLong> index_search_query_count;
+    private ConcurrentHashMap<String,AtomicLong> index_requests_count;
+    private ConcurrentHashMap<String,AtomicLong> index_get_requests_count;
 
     private ProfilerState() {
         this.profiling = false;
         this.queryCount = new AtomicLong(0);
-        this.index_query_count = new ConcurrentHashMap<>();
+        this.index_search_query_count = new ConcurrentHashMap<>();
+        this.index_requests_count = new ConcurrentHashMap<>();
+        this.index_get_requests_count = new ConcurrentHashMap<>();
     }
 
     public static synchronized ProfilerState getInstance() {
@@ -37,6 +42,10 @@ public class ProfilerState {
 
     public void disableProfiling() {
         this.profiling = false;
+    }
+
+    public boolean isProfiling() {
+        return profiling;
     }
 
     public void incrementQueryCount() {
@@ -57,6 +66,29 @@ public class ProfilerState {
         queryCount.set(0);
     }
     public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_query_count(){
-        return index_query_count;
+        return index_search_query_count;
+    }
+    public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_requests_count(){
+        return index_requests_count;
+    }
+    public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_get_requests_count(){
+        return index_get_requests_count;
+    }
+
+
+    public ConcurrentHashMap<String, Map<String, Long>> collectAndResetStats() {
+        ConcurrentHashMap<String, Map<String, Long>> stats = new ConcurrentHashMap<>();
+        for (Map.Entry<String, AtomicLong> entry : index_search_query_count.entrySet()) {
+            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("search_query_count", entry.getValue().getAndSet(0));
+        }
+        for (Map.Entry<String, AtomicLong> entry : index_requests_count.entrySet()) {
+            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("index_request_count", entry.getValue().getAndSet(0));
+        }
+        for (Map.Entry<String, AtomicLong> entry : index_get_requests_count.entrySet()) {
+            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("index_get_request_count", entry.getValue().getAndSet(0));
+        }
+        queryCount.set(0);
+//        stats.put("totalQueries", queryCount.getAndSet(0));
+        return stats;
     }
 }

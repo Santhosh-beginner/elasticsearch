@@ -240,6 +240,7 @@ final class OutboundHandler {
             channel.sendMessage(reference, new ActionListener<>() {
                 @Override
                 public void onResponse(Void v) {
+
                     statsTracker.markBytesWritten(messageSize);
                     listener.onResponse(v);
                     maybeLogSlowMessage(true);
