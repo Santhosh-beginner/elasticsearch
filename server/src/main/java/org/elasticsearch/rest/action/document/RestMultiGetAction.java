@@ -13,6 +13,7 @@ import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.RestApiVersion;
+import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.Scope;
@@ -23,6 +24,7 @@ import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
@@ -58,6 +60,10 @@ public class RestMultiGetAction extends BaseRestHandler {
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
         if (request.getRestApiVersion() == RestApiVersion.V_7 && request.param("type") != null) {
             request.param("type");
+        }
+        ProfilerState.getInstance().incrementQueryCount();
+        if(ProfilerState.getInstance().getStatus() == 1){
+            ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
         }
         MultiGetRequest multiGetRequest = new MultiGetRequest();
         multiGetRequest.refresh(request.paramAsBoolean("refresh", multiGetRequest.refresh()));
