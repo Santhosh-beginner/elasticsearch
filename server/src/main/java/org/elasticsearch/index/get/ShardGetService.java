@@ -36,6 +36,7 @@ import org.elasticsearch.index.mapper.SourceLoader;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.MultiEngineGet;
+import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.lookup.Source;
 
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static org.elasticsearch.index.seqno.SequenceNumbers.UNASSIGNED_PRIMARY_TERM;
@@ -156,6 +158,11 @@ public final class ShardGetService extends AbstractIndexShardComponent {
 
             if (getResult != null && getResult.isExists()) {
                 existsMetric.inc(System.nanoTime() - now);
+                ProfilerState.getInstance().incrementQueryCount();
+                if(ProfilerState.getInstance().getStatus() == 1){
+                    ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(getResult.getIndex(),k->new AtomicLong(0)).addAndGet(1);
+                    ProfilerState.getInstance().getIndex_primary_replica_status().put(getResult.getIndex(),this.indexShard.isPrimaryMode());
+                }
             } else {
                 missingMetric.inc(System.nanoTime() - now);
             }

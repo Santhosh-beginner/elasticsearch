@@ -11,8 +11,10 @@ package org.elasticsearch.index.shard;
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.index.engine.Engine;
+import org.elasticsearch.myprofiler.ProfilerState;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Internal class that maintains relevant indexing statistics / metrics.
@@ -61,6 +63,19 @@ final class InternalIndexingStats implements IndexingOperationListener {
                 if (index.origin().isRecovery() == false) {
                     long took = result.getTook();
                     totalStats.indexMetric.inc(took);
+                    ProfilerState.getInstance().incrementQueryCount();
+                    Boolean primary;
+                    if(index.origin().name().equals("PRIMARY")){
+                        primary=true;
+                    }
+                    else{
+                        primary=false;
+                    }
+                    if(ProfilerState.getInstance().getStatus() == 1){
+                     ProfilerState.getInstance().getIndex_requests_count().computeIfAbsent(shardId.getIndexName(),k->new AtomicLong(0)).addAndGet(1);
+                     ProfilerState.getInstance().getIndex_primary_replica_status().put(shardId.getIndexName(),primary);
+                    }
+
                     totalStats.indexCurrent.dec();
                 }
                 break;
@@ -96,6 +111,19 @@ final class InternalIndexingStats implements IndexingOperationListener {
                 if (delete.origin().isRecovery() == false) {
                     long took = result.getTook();
                     totalStats.deleteMetric.inc(took);
+                    ProfilerState.getInstance().incrementQueryCount();
+                    Boolean primary;
+                    if(delete.origin().name().equals("PRIMARY")){
+                        primary=true;
+                    }
+                    else{
+                        primary=false;
+                    }
+                    if(ProfilerState.getInstance().getStatus() == 1){
+                        ProfilerState.getInstance().getIndex_delete_requests_count().computeIfAbsent(shardId.getIndexName(),k->new AtomicLong(0)).addAndGet(1);
+                        ProfilerState.getInstance().getIndex_primary_replica_status().put(shardId.getIndexName(),primary);
+
+                    }
                     totalStats.deleteCurrent.dec();
                 }
                 break;

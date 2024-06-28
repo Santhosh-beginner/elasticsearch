@@ -56,10 +56,10 @@ public class RestGetAction extends BaseRestHandler {
         if (request.getRestApiVersion() == RestApiVersion.V_7) {
             request.param("type"); // consume and ignore the type
         }
-        ProfilerState.getInstance().incrementQueryCount();
-        if(ProfilerState.getInstance().getStatus() == 1){
-            ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
-        }
+//        ProfilerState.getInstance().incrementQueryCount();
+//        if(ProfilerState.getInstance().getStatus() == 1){
+//            ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
+//        }
 
         GetRequest getRequest = new GetRequest(request.param("index"), request.param("id"));
 

@@ -61,10 +61,10 @@ public class RestMultiGetAction extends BaseRestHandler {
         if (request.getRestApiVersion() == RestApiVersion.V_7 && request.param("type") != null) {
             request.param("type");
         }
-        ProfilerState.getInstance().incrementQueryCount();
-        if(ProfilerState.getInstance().getStatus() == 1){
-            ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
-        }
+//        ProfilerState.getInstance().incrementQueryCount();
+//        if(ProfilerState.getInstance().getStatus() == 1){
+//            ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
+//        }
         MultiGetRequest multiGetRequest = new MultiGetRequest();
         multiGetRequest.refresh(request.paramAsBoolean("refresh", multiGetRequest.refresh()));
         multiGetRequest.preference(request.param("preference"));

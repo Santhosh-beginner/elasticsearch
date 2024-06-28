@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ProfilerActionHandler extends BaseRestHandler {
-    //    private final ProfilerScheduler profilerScheduler;
+
     private final NodeClient client;
 
     @Inject
@@ -39,14 +39,18 @@ public class ProfilerActionHandler extends BaseRestHandler {
     @Override
     public List<Route> routes() {
         return List.of(
+            new Route(RestRequest.Method.POST, "/profiler/{action}/{interval}"),
             new Route(RestRequest.Method.POST, "/profiler/{action}")
         );
     }
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         String action = request.param("action");
+        String intervalParam = request.param("interval");
+        TimeValue interval = parseInterval(intervalParam);
+
         if ("start".equals(action)) {
-            return channel -> broadcastStartAction("start", ActionListener.wrap(
+            return channel -> broadcastStartAction("start",interval, ActionListener.wrap(
                 response -> channel.sendResponse(new RestResponse(RestStatus.OK, "Profiler started on all nodes")),
                 e -> channel.sendResponse(new RestResponse(RestStatus.INTERNAL_SERVER_ERROR, "Failed to start profiler on all nodes"))
             ));
@@ -60,8 +64,8 @@ public class ProfilerActionHandler extends BaseRestHandler {
         }
     }
 
-    private void broadcastStartAction(String action, ActionListener<Void> listener) {
-        TransportStartProfilerAction.Request request = new TransportStartProfilerAction.Request(action);
+    private void broadcastStartAction(String action,TimeValue interval, ActionListener<Void> listener) {
+        TransportStartProfilerAction.Request request = new TransportStartProfilerAction.Request(action,interval);
         client.executeLocally(TransportStartProfilerAction.ACTION_TYPE, request, ActionListener.wrap(
             response -> listener.onResponse(null),
             e -> listener.onFailure(e)
@@ -74,6 +78,30 @@ public class ProfilerActionHandler extends BaseRestHandler {
             response -> listener.onResponse(null),
             e -> listener.onFailure(e)
         ));
+    }
+    private TimeValue parseInterval(String intervalParam) {
+        if (intervalParam == null || intervalParam.isEmpty()) {
+            return new TimeValue(5, TimeUnit.MINUTES); // Default interval
+        }
+
+        // Parse the interval string (e.g., "5m" to 5 minutes)
+        try {
+            long time = Long.parseLong(intervalParam.substring(0, intervalParam.length() - 1));
+            char unit = intervalParam.charAt(intervalParam.length() - 1);
+
+            switch (unit) {
+                case 's':
+                    return new TimeValue(time, TimeUnit.SECONDS);
+                case 'm':
+                    return new TimeValue(time, TimeUnit.MINUTES);
+                case 'h':
+                    return new TimeValue(time, TimeUnit.HOURS);
+                default:
+                    throw new IllegalArgumentException("Invalid time unit");
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid interval format", e);
+        }
     }
 
 }

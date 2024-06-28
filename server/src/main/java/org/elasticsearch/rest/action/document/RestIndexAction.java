@@ -107,10 +107,10 @@ public class RestIndexAction extends BaseRestHandler {
             assert request.params().get("id") == null : "non-null id: " + request.params().get("id");
             // default to op_type create
             request.params().putIfAbsent("op_type", "create");
-            ProfilerState.getInstance().incrementQueryCount();
-            if(ProfilerState.getInstance().getStatus() == 1){
-                ProfilerState.getInstance().getIndex_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
-            }
+//            ProfilerState.getInstance().incrementQueryCount();
+//            if(ProfilerState.getInstance().getStatus() == 1){
+//                ProfilerState.getInstance().getIndex_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
+//            }
             return super.prepareRequest(request, client);
         }
     }
