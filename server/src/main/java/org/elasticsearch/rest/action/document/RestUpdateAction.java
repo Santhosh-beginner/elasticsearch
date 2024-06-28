@@ -17,6 +17,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.VersionType;
+import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.Scope;
@@ -27,6 +28,7 @@ import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 
@@ -50,6 +52,10 @@ public class RestUpdateAction extends BaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+        ProfilerState.getInstance().incrementQueryCount();
+        if(ProfilerState.getInstance().getStatus() == 1){
+            ProfilerState.getInstance().getIndex_update_requests_count().computeIfAbsent(request.params().get("index"),k->new AtomicLong(0)).addAndGet(1);
+        }
         if (request.getRestApiVersion() == RestApiVersion.V_7 && request.hasParam("type")) {
             request.param("type");
         }

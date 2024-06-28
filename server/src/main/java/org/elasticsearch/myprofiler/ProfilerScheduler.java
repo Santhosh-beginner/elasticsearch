@@ -20,11 +20,12 @@ import org.elasticsearch.xcontent.XContentFactory;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ProfilerScheduler {
     private final ThreadPool threadPool;
     private final NodeClient client;
-    private final TimeValue interval;
+    private TimeValue interval;
     private volatile Scheduler.Cancellable cancellable;
 
     public ProfilerScheduler(ThreadPool threadPool, NodeClient client, TimeValue interval) {
@@ -32,6 +33,16 @@ public class ProfilerScheduler {
         this.client = client;
         this.interval = interval;
     }
+
+    public synchronized void setInterval(TimeValue interval) {
+//        if (this.interval.equals(interval)) {
+//            return;
+//        }
+//        stop();
+        this.interval = interval;
+//        start();
+    }
+
 
     public synchronized void start() {
         if (cancellable == null) {
@@ -46,13 +57,19 @@ public class ProfilerScheduler {
             System.out.println("scheduler off");
             cancellable.cancel();
             cancellable = null;
+            ProfilerState profilerState = ProfilerState.getInstance();
+            long totalSearchQueries = profilerState.getQueryCount();
+            Map<String, Map<String, Long>> stats = profilerState.collectAndResetStats();
+            // Code to push stats to Elasticsearch index
+
+            pushStatsToIndex(stats,totalSearchQueries,System.currentTimeMillis(),System.currentTimeMillis());
         }
     }
 
     private void run() {
         ProfilerState profilerState = ProfilerState.getInstance();
         long startTime = System.currentTimeMillis();
-        long endTime = startTime+300000;
+        long endTime = startTime+interval.getMillis();;
         if (profilerState.isProfiling()) {
             long totalSearchQueries = profilerState.getQueryCount();
             Map<String, Map<String, Long>> stats = profilerState.collectAndResetStats();
@@ -75,15 +92,25 @@ public class ProfilerScheduler {
                 .field("endTime", endTime)
                 .startArray("stats");
 
+
+            ProfilerState profilerState = ProfilerState.getInstance();
+            ConcurrentHashMap<String, Boolean> indexStatus = profilerState.getIndex_primary_replica_status();
+
             for (Map.Entry<String, Map<String, Long>> entry : stats.entrySet()) {
+                boolean isPrimary = indexStatus.getOrDefault(entry.getKey(), false);
                 builder.startObject()
                     .field("index", entry.getKey())
+                    .field("isPrimary", isPrimary)
                     .field("search_query_count", entry.getValue().getOrDefault("search_query_count", 0L))
                     .field("index_request_count", entry.getValue().getOrDefault("index_request_count", 0L))
-                    .field("get_request_count", entry.getValue().getOrDefault("get_request_count", 0L))
+                    .field("get_request_count", entry.getValue().getOrDefault("index_get_request_count", 0L))
+                    .field("scroll_request_count", entry.getValue().getOrDefault("scroll_request_count", 0L))
+                    .field("update_request_count", entry.getValue().getOrDefault("update_request_count", 0L))
+                    .field("delete_request_count",entry.getValue().getOrDefault("delete_request_count", 0L))
                     .endObject();
             }
             builder.endArray().endObject();
+            profilerState.getIndex_primary_replica_status().clear();
             IndexRequest indexRequest = new IndexRequest("profiler_stats").source(builder);
             client.index(indexRequest);
         }catch (IOException e){
