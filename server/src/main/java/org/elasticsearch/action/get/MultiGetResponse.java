@@ -121,6 +121,7 @@ public class MultiGetResponse extends ActionResponse implements Iterable<MultiGe
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
+        int documentExistCount = 0;
         builder.startArray(DOCS.getPreferredName());
         for (MultiGetItemResponse response : responses) {
             if (response.isFailed()) {
@@ -128,10 +129,14 @@ public class MultiGetResponse extends ActionResponse implements Iterable<MultiGe
                 failure.toXContent(builder, params);
             } else {
                 GetResponse getResponse = response.getResponse();
+                if (getResponse.isExists()) {
+                    documentExistCount++;
+                }
                 getResponse.toXContent(builder, params);
             }
         }
         builder.endArray();
+        builder.field("documentExistCount", documentExistCount);
         builder.endObject();
         return builder;
     }
