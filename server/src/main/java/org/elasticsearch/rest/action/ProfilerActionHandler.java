@@ -2,13 +2,11 @@
 package org.elasticsearch.rest.action;
 
 import org.elasticsearch.action.ActionListener;
-//import org.elasticsearch.action.TransportProfilerAction;
 import org.elasticsearch.action.TransportStartProfilerAction;
 import org.elasticsearch.action.TransportStopProfilerAction;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.myprofiler.ProfilerScheduler;
 import org.elasticsearch.myprofiler.ProfilerSchedulerHolder;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
@@ -27,7 +25,6 @@ public class ProfilerActionHandler extends BaseRestHandler {
     public ProfilerActionHandler(NodeClient client) {
         this.client = client;
         ThreadPool threadPool = client.threadPool();
-//        this.profilerScheduler = new ProfilerScheduler(threadPool, client, new TimeValue(5, TimeUnit.MINUTES));
         ProfilerSchedulerHolder.initialize(threadPool,client,new TimeValue(5,TimeUnit.MINUTES));
     }
 

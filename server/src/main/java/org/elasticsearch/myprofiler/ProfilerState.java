@@ -74,24 +74,35 @@ public class ProfilerState {
     public void resetQueryCount() {
         queryCount.set(0);
     }
+
     public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_query_count(){
         return index_search_query_count;
     }
+
     public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_requests_count(){
         return index_requests_count;
     }
+
     public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_get_requests_count(){
         return index_get_requests_count;
     }
+
     public synchronized ConcurrentHashMap<String, AtomicLong> getIndex_update_requests_count(){
         return index_update_requests_count;
     }
-    public synchronized ConcurrentHashMap<String,AtomicLong> getIndex_delete_requests_count(){return index_delete_requests_count;}
-    public synchronized ConcurrentHashMap<String,AtomicLong> getIndex_scroll_requests_count(){return index_scroll_requests_count;}
+
+    public synchronized ConcurrentHashMap<String,AtomicLong> getIndex_delete_requests_count(){
+        return index_delete_requests_count;
+    }
+
+    public synchronized ConcurrentHashMap<String,AtomicLong> getIndex_scroll_requests_count(){
+        return index_scroll_requests_count;
+    }
 
     public synchronized ConcurrentHashMap<String, Boolean> getIndex_primary_replica_status() {
         return index_primary_replica_status;
     }
+
     public void setPrimaryReplicaStatus(String index, boolean isPrimary) {
         index_primary_replica_status.put(index, isPrimary);
     }
@@ -100,13 +111,13 @@ public class ProfilerState {
     public ConcurrentHashMap<String, Map<String, Long>> collectAndResetStats() {
         ConcurrentHashMap<String, Map<String, Long>> stats = new ConcurrentHashMap<>();
         for (Map.Entry<String, AtomicLong> entry : index_search_query_count.entrySet()) {
-            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("search_query_count", entry.getValue().getAndSet(0));
+            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("search_request_count", entry.getValue().getAndSet(0));
         }
         for (Map.Entry<String, AtomicLong> entry : index_requests_count.entrySet()) {
             stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("index_request_count", entry.getValue().getAndSet(0));
         }
         for (Map.Entry<String, AtomicLong> entry : index_get_requests_count.entrySet()) {
-            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("index_get_request_count", entry.getValue().getAndSet(0));
+            stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("get_request_count", entry.getValue().getAndSet(0));
         }
         for (Map.Entry<String, AtomicLong> entry : index_update_requests_count.entrySet()) {
             stats.computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>()).put("update_request_count", entry.getValue().getAndSet(0));
@@ -125,7 +136,6 @@ public class ProfilerState {
         index_update_requests_count.clear();
         index_delete_requests_count.clear();
         index_scroll_requests_count.clear();
-//        stats.put("totalQueries", queryCount.getAndSet(0));
         return stats;
     }
 }

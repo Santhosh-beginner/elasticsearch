@@ -156,13 +156,14 @@ public final class ShardGetService extends AbstractIndexShardComponent {
                 engineGetOperator
             );
 
+            ProfilerState.getInstance().incrementQueryCount();
+            if(ProfilerState.getInstance().getStatus() == 1){
+                ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(getResult.getIndex(),k->new AtomicLong(0)).addAndGet(1);
+                ProfilerState.getInstance().getIndex_primary_replica_status().put(getResult.getIndex(),this.indexShard.isPrimaryMode());
+            }
+
             if (getResult != null && getResult.isExists()) {
                 existsMetric.inc(System.nanoTime() - now);
-                ProfilerState.getInstance().incrementQueryCount();
-                if(ProfilerState.getInstance().getStatus() == 1){
-                    ProfilerState.getInstance().getIndex_get_requests_count().computeIfAbsent(getResult.getIndex(),k->new AtomicLong(0)).addAndGet(1);
-                    ProfilerState.getInstance().getIndex_primary_replica_status().put(getResult.getIndex(),this.indexShard.isPrimaryMode());
-                }
             } else {
                 missingMetric.inc(System.nanoTime() - now);
             }

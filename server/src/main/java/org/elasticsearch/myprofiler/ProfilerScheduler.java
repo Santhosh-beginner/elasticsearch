@@ -35,34 +35,25 @@ public class ProfilerScheduler {
     }
 
     public synchronized void setInterval(TimeValue interval) {
-//        if (this.interval.equals(interval)) {
-//            return;
-//        }
-//        stop();
         this.interval = interval;
-//        start();
     }
 
 
     public synchronized void start() {
         if (cancellable == null) {
             ProfilerState.getInstance().enableProfiling();
-            System.out.println("scheduler running");
             cancellable = threadPool.scheduleWithFixedDelay(this::run, interval,threadPool.generic());
         }
     }
     public synchronized void stop() {
         if (cancellable != null) {
             ProfilerState.getInstance().disableProfiling();
-            System.out.println("scheduler off");
             cancellable.cancel();
             cancellable = null;
             ProfilerState profilerState = ProfilerState.getInstance();
-            long totalSearchQueries = profilerState.getQueryCount();
+            long totalQueries = profilerState.getQueryCount();
             Map<String, Map<String, Long>> stats = profilerState.collectAndResetStats();
-            // Code to push stats to Elasticsearch index
-
-            pushStatsToIndex(stats,totalSearchQueries,System.currentTimeMillis(),System.currentTimeMillis());
+            pushStatsToIndex(stats,totalQueries,System.currentTimeMillis(),System.currentTimeMillis());
         }
     }
 
@@ -71,39 +62,29 @@ public class ProfilerScheduler {
         long startTime = System.currentTimeMillis();
         long endTime = startTime+interval.getMillis();;
         if (profilerState.isProfiling()) {
-            long totalSearchQueries = profilerState.getQueryCount();
+            long totalQueries = profilerState.getQueryCount();
             Map<String, Map<String, Long>> stats = profilerState.collectAndResetStats();
-            // Code to push stats to Elasticsearch index
-
-            pushStatsToIndex(stats,totalSearchQueries,startTime,endTime);
+            pushStatsToIndex(stats,totalQueries,startTime,endTime);
         }
     }
-    private void pushStatsToIndex(Map<String, Map<String, Long>> stats,long totalSearchQueries,long startTime,long endTime) throws ElasticsearchException{
-
-//        System.out.println("Statistics for the last interval:");
-//        for (Map.Entry<String, Long> entry : stats.entrySet()) {
-//            System.out.println(entry.getKey() + ": " + entry.getValue());
-//        }
+    private void pushStatsToIndex(Map<String, Map<String, Long>> stats,long totalQueries,long startTime,long endTime) throws ElasticsearchException{
         try {
             XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
                 .field("nodeName", "node-1")
-                .field("totalSearchQueries", totalSearchQueries)
+                .field("totalQueries", totalQueries)
                 .field("startTime", startTime)
                 .field("endTime", endTime)
                 .startArray("stats");
-
-
             ProfilerState profilerState = ProfilerState.getInstance();
             ConcurrentHashMap<String, Boolean> indexStatus = profilerState.getIndex_primary_replica_status();
-
             for (Map.Entry<String, Map<String, Long>> entry : stats.entrySet()) {
                 boolean isPrimary = indexStatus.getOrDefault(entry.getKey(), false);
                 builder.startObject()
                     .field("index", entry.getKey())
                     .field("isPrimary", isPrimary)
-                    .field("search_query_count", entry.getValue().getOrDefault("search_query_count", 0L))
+                    .field("search_request_count", entry.getValue().getOrDefault("search_request_count", 0L))
                     .field("index_request_count", entry.getValue().getOrDefault("index_request_count", 0L))
-                    .field("get_request_count", entry.getValue().getOrDefault("index_get_request_count", 0L))
+                    .field("get_request_count", entry.getValue().getOrDefault("get_request_count", 0L))
                     .field("scroll_request_count", entry.getValue().getOrDefault("scroll_request_count", 0L))
                     .field("update_request_count", entry.getValue().getOrDefault("update_request_count", 0L))
                     .field("delete_request_count",entry.getValue().getOrDefault("delete_request_count", 0L))
@@ -116,7 +97,5 @@ public class ProfilerScheduler {
         }catch (IOException e){
             throw new ElasticsearchException(e);
         }
-
     }
-
 }
