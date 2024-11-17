@@ -37,7 +37,6 @@ public class ProfilerCount extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
 
          long count = ProfilerState.getInstance().getQueryCount();
-       // int count = 2;
         return channel -> channel.sendResponse(new RestResponse(RestStatus.OK,Long.toString(count)));
     }
 }

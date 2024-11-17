@@ -14,11 +14,13 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.index.shard.SearchOperationListener;
+import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.search.internal.ReaderContext;
 import org.elasticsearch.search.internal.SearchContext;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
@@ -84,6 +86,11 @@ public final class ShardSearchStats implements SearchOperationListener {
                 statsHolder.suggestCurrent.dec();
             } else {
                 statsHolder.queryMetric.inc(tookInNanos);
+                ProfilerState.getInstance().incrementQueryCount();
+                if(ProfilerState.getInstance().getStatus() == 1){
+                   ProfilerState.getInstance().getIndex_query_count().computeIfAbsent(searchContext.request().indices()[0],k->new AtomicLong(0)).addAndGet(1);
+                   ProfilerState.getInstance().getIndex_primary_replica_status().put(searchContext.request().indices()[0],searchContext.indexShard().isPrimaryMode());
+                }
                 statsHolder.queryCurrent.dec();
             }
         });
@@ -150,6 +157,11 @@ public final class ShardSearchStats implements SearchOperationListener {
         totalStats.scrollCurrent.dec();
         assert totalStats.scrollCurrent.count() >= 0;
         totalStats.scrollMetric.inc(TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - readerContext.getStartTimeInNano()));
+        ProfilerState.getInstance().incrementQueryCount();
+        if(ProfilerState.getInstance().getStatus() == 1){
+            ProfilerState.getInstance().getIndex_scroll_requests_count().computeIfAbsent(readerContext.indexShard().shardId().getIndexName(),k->new AtomicLong(0)).addAndGet(1);
+            ProfilerState.getInstance().getIndex_primary_replica_status().put(readerContext.indexShard().shardId().getIndexName(),readerContext.indexShard().isPrimaryMode());
+        }
     }
 
     static final class StatsHolder {

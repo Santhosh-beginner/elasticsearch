@@ -23,7 +23,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.myprofiler.ProfilerScheduler;
 import org.elasticsearch.myprofiler.ProfilerSchedulerHolder;
-import org.elasticsearch.myprofiler.ProfilerState;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
 
@@ -44,7 +43,6 @@ public class TransportStopProfilerAction extends TransportNodesAction<
             clusterService,
             transportService,
             actionFilters,
-
             TransportStopProfilerAction.NodeRequest::new,
             EsExecutors.DIRECT_EXECUTOR_SERVICE);
     }
@@ -74,33 +72,19 @@ public class TransportStopProfilerAction extends TransportNodesAction<
 
     @Override
     protected TransportStopProfilerAction.NodeResponse nodeOperation(TransportStopProfilerAction.NodeRequest request, Task task) {
-//        ProfilerState profilerState = ProfilerState.getInstance();
-////        if ("start".equals(request.getAction())) {
-////        profilerState.enableProfiling();
-////        } else {
-//        profilerState.disableProfiling();
         ProfilerScheduler profilerScheduler = ProfilerSchedulerHolder.getProfilerScheduler();
         profilerScheduler.stop();
-//        }
         return new TransportStopProfilerAction.NodeResponse(clusterService.localNode());
     }
 
     public static class Request extends BaseNodesRequest<TransportStopProfilerAction.Request> {
-//        private String action;
-
         public Request(StreamInput in) throws IOException {
             super(in);
-//            this.action = in.readString();
         }
 
         public Request(String action,String... nodesIds) {
             super(nodesIds);
-//            this.action = action;
         }
-//        public String getAction() {
-//            return action;
-//        }
-
     }
     public static class Response extends BaseNodesResponse<TransportStopProfilerAction.NodeResponse> {
         public Response(){
@@ -125,19 +109,13 @@ public class TransportStopProfilerAction extends TransportNodesAction<
     }
 
     public static class NodeRequest extends BaseNodesRequest<TransportStopProfilerAction.Request> {
-        //        private String action;
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-//            this.action = "start";
         }
 
         public NodeRequest(TransportStopProfilerAction.Request request) {
             super(String.valueOf(request));
-//            this.action = request.getAction();
         }
-//        public String getAction() {
-//            return action;
-//        }
     }
     public static class NodeResponse extends BaseNodeResponse {
         public NodeResponse(StreamInput in) throws IOException {

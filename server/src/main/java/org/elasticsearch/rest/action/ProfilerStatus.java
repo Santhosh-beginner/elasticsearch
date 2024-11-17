@@ -37,7 +37,6 @@ public class ProfilerStatus extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
 
         int status = ProfilerState.getInstance().getStatus();
-       // int status=1;
         String a;
         if(status == 1){
             a="profiler is on";

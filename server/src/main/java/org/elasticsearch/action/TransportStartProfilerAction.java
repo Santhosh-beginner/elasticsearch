@@ -21,10 +21,9 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.myprofiler.ProfilerScheduler;
 import org.elasticsearch.myprofiler.ProfilerSchedulerHolder;
-import org.elasticsearch.myprofiler.ProfilerState;
-import org.elasticsearch.rest.action.ProfilerActionHandler;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
 
@@ -45,7 +44,6 @@ public class TransportStartProfilerAction extends TransportNodesAction<
             clusterService,
             transportService,
             actionFilters,
-
             TransportStartProfilerAction.NodeRequest::new,
             EsExecutors.DIRECT_EXECUTOR_SERVICE);
     }
@@ -75,35 +73,33 @@ public class TransportStartProfilerAction extends TransportNodesAction<
 
     @Override
     protected NodeResponse nodeOperation(NodeRequest request, Task task) {
-//        ProfilerState profilerState = ProfilerState.getInstance();
-////        if ("start".equals(request.getAction())) {
-//        profilerState.enableProfiling();
         ProfilerScheduler profilerScheduler = ProfilerSchedulerHolder.getProfilerScheduler();
+        profilerScheduler.setInterval(request.getInterval());
         profilerScheduler.start();
-//        ProfilerActionHandler.profil
-//        } else {
-//            profilerState.disableProfiling();
-//        }
         return new NodeResponse(clusterService.localNode());
     }
 
 
     public static class Request extends BaseNodesRequest<Request> {
-//        private String action;
+        private final TimeValue interval;
 
         public Request(StreamInput in) throws IOException {
             super(in);
-//            this.action = in.readString();
+            this.interval = TimeValue.timeValueMillis(in.readLong());
         }
 
-        public Request(String action,String... nodesIds) {
+        public Request(String action,TimeValue interval,String... nodesIds) {
             super(nodesIds);
-//            this.action = action;
+            this.interval = interval;
         }
-//        public String getAction() {
-//            return action;
-//        }
-
+        public TimeValue getInterval(){
+            return interval;
+        }
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            super.writeTo(out);
+            out.writeLong(interval.getMillis());
+        }
     }
     public static class Response extends BaseNodesResponse<NodeResponse> {
         public Response(){
@@ -128,19 +124,25 @@ public class TransportStartProfilerAction extends TransportNodesAction<
     }
 
     public static class NodeRequest extends BaseNodesRequest<Request> {
-//        private String action;
+        //        private String action;
+        private final TimeValue interval;
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-//            this.action = "start";
+            this.interval = TimeValue.timeValueMillis(in.readLong());
         }
 
         public NodeRequest(Request request) {
             super(String.valueOf(request));
-//            this.action = request.getAction();
+            this.interval = request.getInterval();
         }
-//        public String getAction() {
-//            return action;
-//        }
+        public TimeValue getInterval() {
+            return interval;
+        }
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            super.writeTo(out);
+            out.writeLong(interval.getMillis());
+        }
     }
     public static class NodeResponse extends BaseNodeResponse {
         public NodeResponse(StreamInput in) throws IOException {
